@@ -212,14 +212,14 @@ public class ChatActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         zone2OnlineRef.setValue("online");
-        startService(new Intent(this, BackgroundGpsService.class)); //start service
+        startService(new Intent(this, BackgroundGpsService.class));
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         zone2OnlineRef.setValue("offline");
-        stopService(new Intent(this, BackgroundGpsService.class)); //stop service
+        stopService(new Intent(this, BackgroundGpsService.class));
 
     }
 
