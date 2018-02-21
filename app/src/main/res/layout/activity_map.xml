@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.rtstl.soulmate4u.MapActivity">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:context="com.example.tutorialspoint7.myapplication.MapsActivity" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/btn_restaurant"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="Show Restaurants" />
+
+            <Button
+                android:id="@+id/btn_hide"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="Hide Restaurants"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/white_rounded_corner">
+
+            <ImageView
+                android:id="@+id/iv_menu"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="left"
+                android:layout_marginLeft="5dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/menu" />
+
+            <EditText
+                android:id="@+id/et_looking_search"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_toLeftOf="@+id/divider"
+                android:layout_toRightOf="@+id/iv_menu"
+                android:background="@null"
+                android:hint="What are you looking for?"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:id="@+id/divider"
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="5dp"
+                android:layout_marginTop="5dp"
+                android:layout_toLeftOf="@+id/iv_search_submit"
+                android:background="#e4e4e4"
+                android:orientation="vertical" />
+
+            <ImageView
+                android:id="@+id/iv_search_submit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:scaleType="fitCenter"
+                android:src="@drawable/right_arrow" />
+
+        </RelativeLayout>
+
+        <ImageView
+            android:id="@+id/iv_status"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_gravity="left"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="80dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/status_male" />
+
+
+        <ImageView
+            android:id="@+id/iv_visible"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_gravity="right"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="80dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/visible_male" />
+
+
+        <ImageView
+            android:id="@+id/iv_finder"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_gravity="right"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="140dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/telescope_male" />
+
+        <ImageView
+            android:id="@+id/iv_list"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_gravity="right"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="200dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/listing_male" />
+
+        <ImageView
+            android:id="@+id/iv_flist"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_gravity="right"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="280dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/friendlist_male" />
+
+        <RelativeLayout
+            android:id="@+id/rl_finder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:layout_marginLeft="40dp"
+            android:layout_marginTop="140dp"
+            android:visibility="gone">
+
+
+            <LinearLayout
+                android:id="@+id/ll_rv_wrapper"
+                android:layout_width="match_parent"
+                android:layout_height="400dp"
+                android:layout_below="@+id/rl_head"
+                android:layout_marginTop="-50dp"
+                android:background="@drawable/brown_left_rounded"
+                android:orientation="vertical"
+                android:paddingBottom="10dp">
+
+                <ProgressBar
+                    android:id="@+id/nearby_loader"
+                    style="?android:attr/progressBarStyleSmallTitle"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginLeft="120dp"
+                    android:layout_marginTop="150dp"
+                    android:indeterminate="true"
+                    android:indeterminateTint="@color/com_facebook_blue"
+                    android:indeterminateTintMode="src_atop" />
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/rv_nearby"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    android:layout_marginTop="50dp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <RelativeLayout
+                android:id="@+id/rl_head"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/brown_left_rounded">
+
+                <ImageView
+                    android:id="@+id/left_icon"
+                    android:layout_width="45dp"
+                    android:layout_height="45dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="5dp"
+                    android:src="@drawable/telescope_male" />
+
+                <com.jaredrummler.materialspinner.MaterialSpinner
+                    android:id="@+id/spn_nearby"
+                    android:layout_width="120dp"
+                    android:layout_height="match_parent"
+                    android:layout_centerVertical="true"
+                    android:layout_marginBottom="5dp"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_toRightOf="@+id/left_icon"
+                    android:hint="Find.."
+                    android:textColor="#000000"
+                    android:textSize="12sp"
+                    app:ms_hint_color="#000000" />
+
+                <com.jaredrummler.materialspinner.MaterialSpinner
+                    android:id="@+id/spn_distance"
+                    android:layout_width="120dp"
+                    android:layout_height="match_parent"
+                    android:layout_centerVertical="true"
+                    android:layout_marginBottom="5dp"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_toRightOf="@+id/spn_nearby"
+                    android:hint="Meter.."
+                    android:textColor="#000000"
+                    android:textSize="12sp"
+                    app:ms_hint_color="#000000" />
+
+                <ImageView
+                    android:id="@+id/iv_search"
+                    android:layout_width="30dp"
+                    android:layout_height="match_parent"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginRight="5dp"
+                    android:src="@drawable/search"
+                    android:visibility="gone" />
+
+            </RelativeLayout>
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/rl_flist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:layout_marginLeft="40dp"
+            android:layout_marginTop="280dp"
+            android:visibility="visible">
+
+
+            <LinearLayout
+                android:id="@+id/ll_flist_wrapper"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:layout_below="@+id/ll_head_flist"
+                android:layout_marginTop="-50dp"
+                android:background="@drawable/brown_left_rounded"
+                android:orientation="vertical"
+                android:paddingBottom="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="50dp"
+                    android:background="@color/colorAccent"
+                    android:orientation="vertical" />
+
+                <ProgressBar
+                    android:id="@+id/flist_loader"
+                    style="?android:attr/progressBarStyleSmallTitle"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginLeft="120dp"
+                    android:layout_marginTop="80dp"
+                    android:indeterminate="true"
+                    android:indeterminateTint="@color/com_facebook_blue"
+                    android:indeterminateTintMode="src_atop" />
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/rv_flist"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    android:layout_marginTop="10dp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/ll_head_flist"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/brown_left_rounded"
+                android:clickable="true"
+                android:orientation="horizontal"
+                android:weightSum="4.5">
+
+                <ImageView
+                    android:id="@+id/iv_friend_list"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginLeft="20dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/friend_list" />
+
+                <LinearLayout
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="10dp"
+                    android:background="#999999" />
+
+                <ImageView
+                    android:id="@+id/iv_pending_list"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/list_pending" />
+
+
+                <LinearLayout
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="10dp"
+                    android:background="#999999" />
+
+                <ImageView
+                    android:id="@+id/iv_rejected_list"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/list_reject" />
+
+                <LinearLayout
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="10dp"
+                    android:background="#999999" />
+
+                <ImageView
+                    android:id="@+id/iv_blocked_list"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/list_block" />
+
+                <LinearLayout
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginTop="10dp"
+                    android:background="#999999" />
+
+                <ImageView
+                    android:id="@+id/close_flist"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_weight="0.5"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/close_flist" />
+
+            </LinearLayout>
+        </RelativeLayout>
+
+    </FrameLayout>
+</LinearLayout>

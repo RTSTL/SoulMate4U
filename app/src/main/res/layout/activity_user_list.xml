@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.rtstl.soulmate4u.UserListActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:orientation="horizontal"
+        android:weightSum="10">
+
+        <ImageView
+            android:id="@+id/iv_back"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left|center_vertical"
+            android:scaleType="fitCenter"
+            android:layout_marginLeft="5dp"
+            android:src="@drawable/back" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="2"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="Sort by : "
+            android:textColor="#000000"
+            android:textSize="16sp"
+            android:id="@+id/tv_sortby"
+            android:layout_marginLeft="10dp"/>
+
+        <com.jaredrummler.materialspinner.MaterialSpinner
+            android:id="@+id/spn_online"
+            android:layout_width="0dp"
+            android:layout_weight="3.5"
+            android:layout_height="match_parent"
+            android:layout_centerVertical="true"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="5dp"
+            android:layout_toRightOf="@+id/tv_sortby"
+            android:hint="online.."
+            android:textColor="#000000"
+            android:textSize="12sp"
+            app:ms_hint_color="#000000" />
+
+        <com.jaredrummler.materialspinner.MaterialSpinner
+            android:id="@+id/spn_near_far"
+            android:layout_width="0dp"
+            android:layout_weight="3.5"
+            android:layout_height="match_parent"
+            android:layout_centerVertical="true"
+            android:layout_marginBottom="5dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="5dp"
+            android:layout_toRightOf="@+id/spn_online"
+            android:hint="online.."
+            android:textColor="#000000"
+            android:textSize="12sp"
+            android:layout_marginRight="5dp"
+            app:ms_hint_color="#000000" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/colorPrimaryDark"/>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rv_user_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="10dp" />
+
+</LinearLayout>

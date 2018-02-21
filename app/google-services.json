@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "1020206052736",
+    "firebase_url": "https://soulmate-190205.firebaseio.com",
+    "project_id": "soulmate-190205",
+    "storage_bucket": "soulmate-190205.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1020206052736:android:faa93321453d5d75",
+        "android_client_info": {
+          "package_name": "com.rtstl.soulmate4u"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1020206052736-55p6srg6s7l3p30j5mu20usi96a1g8mb.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "1020206052736-5vm1fl77uhp2fs3flv2u6rvv86a6bp28.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rtstl.soulmate4u",
+            "certificate_hash": "3e69292028edc374468508969b127e21503ea947"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKr87GzMBd16yWke8ix810nFxa4sO9h5U"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1020206052736-55p6srg6s7l3p30j5mu20usi96a1g8mb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
