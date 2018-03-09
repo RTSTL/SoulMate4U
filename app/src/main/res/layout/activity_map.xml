@@ -261,6 +261,7 @@
                 android:layout_below="@+id/ll_head_flist"
                 android:layout_marginTop="-50dp"
                 android:background="@drawable/brown_left_rounded"
+                android:clickable="true"
                 android:orientation="vertical"
                 android:paddingBottom="10dp">
 
@@ -302,7 +303,7 @@
                 android:background="@drawable/brown_left_rounded"
                 android:clickable="true"
                 android:orientation="horizontal"
-                android:weightSum="4.5">
+                android:weightSum="3.5">
 
                 <ImageView
                     android:id="@+id/iv_friend_list"
@@ -365,7 +366,8 @@
                     android:layout_weight="1"
                     android:clickable="true"
                     android:scaleType="centerInside"
-                    android:src="@drawable/list_block" />
+                    android:src="@drawable/list_block"
+                    android:visibility="gone" />
 
                 <LinearLayout
                     android:layout_width="1dp"

@@ -15,6 +15,7 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -77,6 +78,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.SphericalUtil;
 import com.jaredrummler.materialspinner.MaterialSpinner;
 import com.orhanobut.dialogplus.DialogPlus;
@@ -92,12 +95,19 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -163,6 +173,8 @@ public class MapActivity extends AppCompatActivity implements
     ArrayList<MoodModel> moodList = new ArrayList<>();
     CircleImageView nav_profile_image;
     TextView tv_nav_name, tv_nav_email;
+    RequestQueue getUserQueue;
+    StringRequest getUserStringRequest;
 
     protected void createLocationRequest() {
         mLocationRequest = new LocationRequest();
@@ -217,7 +229,7 @@ public class MapActivity extends AppCompatActivity implements
 
         NavigationView navView = (NavigationView) findViewById(R.id.nav_view);
         navView.setNavigationItemSelectedListener(this);
-        View header=navView.getHeaderView(0);
+        View header = navView.getHeaderView(0);
 
         tv_nav_name = header.findViewById(R.id.tv_nav_name);
         tv_nav_email = header.findViewById(R.id.tv_nav_email);
@@ -598,12 +610,11 @@ public class MapActivity extends AppCompatActivity implements
                         public void onResponse(String response) {
                             // response
                             if (response != null) {
-                                System.out.println("moodlist response : " + response.toString());
+                                System.out.println("mood list response : " + response.toString());
                                 JSONObject jsonObject = null;
                                 try {
                                     jsonObject = new JSONObject(String.valueOf(response));
                                     JSONArray list = jsonObject.optJSONArray("list");
-
 
                                     for (int i = 0; i < list.length(); i++) {
                                         JSONObject jo = list.optJSONObject(i);
@@ -1142,7 +1153,8 @@ public class MapActivity extends AppCompatActivity implements
                         mMap.addMarker(opponetMarkerOptions),
                         userLists.get(i).getId()
                 ));
-                System.out.println("setting tag to marker : " + " title : " + opponentMarkerList.get(i).getOpponentMarker().getTitle()
+                System.out.println("setting tag to marker : " + " title : " + opponentMarkerList.get(i).getOpponentMarker()
+                        .getTitle()
                         + " with id :" + userLists.get(i).getId());
                 opponentMarkerList.get(i).getOpponentMarker().setTag(userLists.get(i).getId());
 
@@ -1176,8 +1188,8 @@ public class MapActivity extends AppCompatActivity implements
                             mMap.addMarker(opponetMarkerOptions),
                             userLists.get(i).getId()
                     ));
-                    System.out.println("setting tag to marker in else: " + " title : " + opponentMarkerList.get(i).getOpponentMarker().getTitle()
-                            + " with id :" + userLists.get(i).getId());
+/*                    System.out.println("setting tag to marker in else: " + " title : " + opponentMarkerList.get(i).getOpponentMarker().getTitle()
+                            + " with id :" + userLists.get(i).getId());*/
                     opponentMarkerList.get(i).getOpponentMarker().setTag(userLists.get(i).getId());
 
                 }
@@ -1277,6 +1289,173 @@ public class MapActivity extends AppCompatActivity implements
             }
         });
 
+
+        drawRoute();// to test the route draw on google Map
+
+
+    }
+
+    private void drawRoute() {
+
+        LatLng origin = new LatLng(22.585759, 88.490015);
+        LatLng dest = new LatLng(22.595769, 88.263639);
+
+        String url = getDirectionsUrl(origin, dest);
+
+        DownloadTask downloadTask = new DownloadTask();
+
+        downloadTask.execute(url);
+
+    }
+
+    private String getDirectionsUrl(LatLng origin, LatLng dest) {
+
+        // Origin of route
+        String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
+
+        // Destination of route
+        String str_dest = "destination=" + dest.latitude + "," + dest.longitude;
+
+        // Sensor enabled
+        String sensor = "sensor=false";
+
+        // Building the parameters to the web service
+        String parameters = str_origin + "&" + str_dest + "&" + sensor;
+
+        // Output format
+        String output = "json";
+
+        String url = "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters;
+
+        return url;
+    }
+
+    private String downloadUrl(String strUrl) throws IOException {
+        String data = "";
+        InputStream iStream = null;
+        HttpURLConnection urlConnection = null;
+        try {
+            URL url = new URL(strUrl);
+
+            urlConnection = (HttpURLConnection) url.openConnection();
+
+            // Connecting to url
+            urlConnection.connect();
+
+            // Reading data from url
+            iStream = urlConnection.getInputStream();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
+
+            StringBuffer sb = new StringBuffer();
+
+            String line = "";
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+
+            data = sb.toString();
+
+            br.close();
+
+        } catch (Exception e) {
+            Log.d("Exception", e.toString());
+        } finally {
+            iStream.close();
+            urlConnection.disconnect();
+        }
+        return data;
+    }
+
+
+    // Fetches data from url passed
+    private class DownloadTask extends AsyncTask<String, Void, String> {
+
+        // Downloading data in non-ui thread
+        @Override
+        protected String doInBackground(String... url) {
+
+            // For storing data from web service
+            String data = "";
+
+            try {
+                // Fetching the data from web service
+                data = downloadUrl(url[0]);
+            } catch (Exception e) {
+                Log.d("Background Task", e.toString());
+            }
+            return data;
+        }
+
+        // Executes in UI thread, after the execution of
+        // doInBackground()
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            ParserTask parserTask = new ParserTask();
+
+            // Invokes the thread for parsing the JSON data
+            parserTask.execute(result);
+        }
+    }
+
+    private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
+
+        @Override
+        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
+
+            JSONObject jObject;
+            List<List<HashMap<String, String>>> routes = null;
+
+            try {
+                jObject = new JSONObject(jsonData[0]);
+                DirectionsJSONParser parser = new DirectionsJSONParser();
+
+                // Starts parsing data
+                routes = parser.parse(jObject);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return routes;
+        }
+
+        @Override
+        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
+            ArrayList<LatLng> points = null;
+            PolylineOptions lineOptions = null;
+            MarkerOptions markerOptions = new MarkerOptions();
+            Polyline polylineFinal;
+
+            // Traversing through all the routes
+            for (int i = 0; i < result.size(); i++) {
+                points = new ArrayList<LatLng>();
+                lineOptions = new PolylineOptions();
+
+                // Fetching i-th route
+                List<HashMap<String, String>> path = result.get(i);
+
+                // Fetching all the points in i-th route
+                for (int j = 0; j < path.size(); j++) {
+                    HashMap<String, String> point = path.get(j);
+
+                    double lat = Double.parseDouble(point.get("lat"));
+                    double lng = Double.parseDouble(point.get("lng"));
+                    LatLng position = new LatLng(lat, lng);
+
+                    points.add(position);
+                }
+
+                // Adding all the points in the route to LineOptions
+                lineOptions.addAll(points);
+                lineOptions.width(14);
+                lineOptions.color(getResources().getColor(R.color.colorAccent));
+            }
+
+            // Drawing polyline in the Google Map for the i-th route
+            polylineFinal = mMap.addPolyline(lineOptions);
+//            polylineFinal.remove(); // to remove the path
+        }
     }
 
     @Override
@@ -1328,8 +1507,8 @@ public class MapActivity extends AppCompatActivity implements
         if (CheckNetwork.isInternetAvailable(MapActivity.this)) {
 
             userLists.clear();
-            RequestQueue queue = Volley.newRequestQueue(this);
-            StringRequest postRequest = new StringRequest(Request.Method.POST, Webservice.getUserList,
+            getUserQueue = Volley.newRequestQueue(this);
+            getUserStringRequest = new StringRequest(Request.Method.POST, Webservice.getUserList,
                     new Response.Listener<String>() {
                         @Override
                         public void onResponse(String response) {
@@ -1389,12 +1568,12 @@ public class MapActivity extends AppCompatActivity implements
                 }
             };
             //To avoid Timeout Error
-            postRequest.setRetryPolicy(new DefaultRetryPolicy(
+            getUserStringRequest.setRetryPolicy(new DefaultRetryPolicy(
                     10000,
                     DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
                     DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
-            queue.add(postRequest);
+            getUserQueue.add(getUserStringRequest);
 
         } else {
             showSnackbar("No internet connection!");
@@ -1736,7 +1915,7 @@ public class MapActivity extends AppCompatActivity implements
                 System.out.println("like user");
                 System.out.println("userlist size now  : " + userLists.size());
                 if (isIdExists(clickedMarkerID)) {
-                    System.out.println("userLists.get(position).getIsLiked() : " + userLists.get(position).getIsLiked());
+//                    System.out.println("userLists.get(position).getIsLiked() : " + userLists.get(position).getIsLiked());
                     iv_chat.setImageDrawable(getResources().getDrawable(R.drawable.chat));
                     if (userLists.get(position).getIsLiked() == 0 || userLists.get(position).getIsLiked() == 3) {
                         likeDislikeUser(1, position, iv_like, iv_dislike, Webservice.sendFriendReq);
@@ -1952,7 +2131,7 @@ public class MapActivity extends AppCompatActivity implements
                         pref.clearPreference();
                         FacebookSdk.sdkInitialize(getApplicationContext());
                         LoginManager.getInstance().logOut();
-                        startActivity(new Intent(MapActivity.this,LoginActivity.class));
+                        startActivity(new Intent(MapActivity.this, LoginActivity.class));
                         finishAffinity();
 
                     }

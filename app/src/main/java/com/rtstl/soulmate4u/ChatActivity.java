@@ -131,7 +131,7 @@ public class ChatActivity extends AppCompatActivity {
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String messageText = messageArea.getText().toString();
+                String messageText = messageArea.getText().toString().trim();
 
                 if (!messageText.equals("")) {
                     Map<String, String> map = new HashMap<String, String>();
