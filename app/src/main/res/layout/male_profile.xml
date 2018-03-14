@@ -27,13 +27,13 @@
 
             <TextView
                 android:id="@+id/tv_name_age"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="40dp"
                 android:layout_marginLeft="5dp"
                 android:layout_marginRight="5dp"
                 android:gravity="center_vertical"
-                android:text="Name, Age, Gender"
                 android:singleLine="true"
+                android:text="Name, Age, Gender"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp" />
 
@@ -140,9 +140,9 @@
                 android:layout_height="25dp"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="1"
-                android:visibility="invisible"
                 android:scaleType="fitCenter"
-                android:src="@drawable/navigate" />
+                android:src="@drawable/navigate"
+                android:visibility="invisible" />
 
         </LinearLayout>
 

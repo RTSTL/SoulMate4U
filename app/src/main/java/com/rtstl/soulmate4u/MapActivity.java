@@ -40,8 +40,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.view.animation.LinearInterpolator;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -62,6 +64,8 @@ import com.androidadvance.topsnackbar.TSnackbar;
 import com.facebook.FacebookSdk;
 import com.facebook.login.LoginManager;
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -69,6 +73,8 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -175,6 +181,8 @@ public class MapActivity extends AppCompatActivity implements
     TextView tv_nav_name, tv_nav_email;
     RequestQueue getUserQueue;
     StringRequest getUserStringRequest;
+    Polyline polylineMyRoute, polylineOtherRoute;
+    String routeForMe = "";
 
     protected void createLocationRequest() {
         mLocationRequest = new LocationRequest();
@@ -1056,7 +1064,9 @@ public class MapActivity extends AppCompatActivity implements
                                                     jo.optString("opponent_profession"),
                                                     jo.optString("interested_in"),
                                                     jo.optString("moodid"),
-                                                    jo.optInt("isfriend")
+                                                    jo.optInt("isfriend"),
+                                                    jo.optString("sourcelatlong"),
+                                                    jo.optString("destlatlong")
                                             ));
                                         }
 
@@ -1136,6 +1146,29 @@ public class MapActivity extends AppCompatActivity implements
                         .icon(BitmapDescriptorFactory.fromBitmap(getMarkerBitmapFromView(R.drawable.profile_default,
                                 pref.getStringPreference(MapActivity.this, "fb_pic"), userLists.get(i).getGender())))
                         .title("Me");
+
+                //draw your own route
+                System.out.println("destination found : " + userLists.get(i).getDestLatLng());
+                System.out.println("source found : " + userLists.get(i).getSourceLatLng());
+//                System.out.println("userLists.get(i).getDestLatLng().split(\"|\")[0] : " + userLists.get(i).getDestLatLng().split("7")[0]);
+
+                if (userLists.get(i).getDestLatLng().length() > 0) {
+                    //route found
+                    System.out.println("&& " + userLists.get(i).getSourceLatLng().split("\\|")[0] + " ++ " +
+                            userLists.get(i).getSourceLatLng().split("\\|")[1] + " ++ " +
+                            userLists.get(i).getDestLatLng().split("\\|")[0] + " ++ " +
+                            userLists.get(i).getDestLatLng().split("\\|")[1]);
+                    String sp = userLists.get(i).getSourceLatLng().toString();
+
+                    System.out.println("split print : " + sp.split("\\|")[0].toString());
+
+                    routeForMe = "me";
+                    drawRoute(userLists.get(i).getSourceLatLng().split("\\|")[0],
+                            userLists.get(i).getSourceLatLng().split("\\|")[1],
+                            userLists.get(i).getDestLatLng().split("\\|")[0],
+                            userLists.get(i).getDestLatLng().split("\\|")[1],
+                            polylineMyRoute);
+                }
 
 
             } else {
@@ -1257,15 +1290,6 @@ public class MapActivity extends AppCompatActivity implements
             @Override
             public boolean onMarkerClick(Marker marker) {
                 System.out.println("clicked marker : " + marker.getTag());
-                /*new AlertDialog.Builder(MapActivity.this)
-                        .setTitle("Your Alert")
-                        .setMessage("Your Message")
-                        .setPositiveButton("ok", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                // Whatever...
-                            }
-                        }).show();*/
 
                 int position = 0;
                 for (int i = 0; i < userLists.size(); i++) {
@@ -1290,15 +1314,12 @@ public class MapActivity extends AppCompatActivity implements
         });
 
 
-        drawRoute();// to test the route draw on google Map
-
-
     }
 
-    private void drawRoute() {
+    private void drawRoute(String lat1, String lng1, String lat2, String lng2, Polyline route) {
 
-        LatLng origin = new LatLng(22.585759, 88.490015);
-        LatLng dest = new LatLng(22.595769, 88.263639);
+        LatLng origin = new LatLng(Double.valueOf(lat1), Double.valueOf(lng1));
+        LatLng dest = new LatLng(Double.valueOf(lat2), Double.valueOf(lng2));
 
         String url = getDirectionsUrl(origin, dest);
 
@@ -1393,10 +1414,17 @@ public class MapActivity extends AppCompatActivity implements
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
 
-            ParserTask parserTask = new ParserTask();
+            if (routeForMe.equalsIgnoreCase("me")) {
+                ParserTask parserTask = new ParserTask();
+                // Invokes the thread for parsing the JSON data
+                parserTask.execute(result);
+            } else if (routeForMe.equalsIgnoreCase("other")) {
+                ParserTaskForOther parserTaskForOther = new ParserTaskForOther();
+                // Invokes the thread for parsing the JSON data
+                parserTaskForOther.execute(result);
+            }
 
-            // Invokes the thread for parsing the JSON data
-            parserTask.execute(result);
+
         }
     }
 
@@ -1425,7 +1453,7 @@ public class MapActivity extends AppCompatActivity implements
             ArrayList<LatLng> points = null;
             PolylineOptions lineOptions = null;
             MarkerOptions markerOptions = new MarkerOptions();
-            Polyline polylineFinal;
+
 
             // Traversing through all the routes
             for (int i = 0; i < result.size(); i++) {
@@ -1453,8 +1481,96 @@ public class MapActivity extends AppCompatActivity implements
             }
 
             // Drawing polyline in the Google Map for the i-th route
-            polylineFinal = mMap.addPolyline(lineOptions);
-//            polylineFinal.remove(); // to remove the path
+            if (polylineMyRoute != null) {
+                polylineMyRoute.remove(); //removing the previous route and adding new route
+                polylineMyRoute = mMap.addPolyline(lineOptions);
+            } else {
+                polylineMyRoute = mMap.addPolyline(lineOptions);
+
+            }
+
+          /*  // Drawing polyline in the Google Map for the i-th route
+            if (polylineOtherRoute != null) {
+                polylineOtherRoute.remove(); //removing the previous route and adding new route
+                polylineOtherRoute = mMap.addPolyline(lineOptions);
+            } else {
+                polylineOtherRoute = mMap.addPolyline(lineOptions);
+
+            }*/
+
+        }
+    }
+
+    private class ParserTaskForOther extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
+
+        @Override
+        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
+
+            JSONObject jObject;
+            List<List<HashMap<String, String>>> routes = null;
+
+            try {
+                jObject = new JSONObject(jsonData[0]);
+                DirectionsJSONParser parser = new DirectionsJSONParser();
+
+                // Starts parsing data
+                routes = parser.parse(jObject);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return routes;
+        }
+
+        @Override
+        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
+            ArrayList<LatLng> points = null;
+            PolylineOptions lineOptions = null;
+            MarkerOptions markerOptions = new MarkerOptions();
+
+
+            // Traversing through all the routes
+            for (int i = 0; i < result.size(); i++) {
+                points = new ArrayList<LatLng>();
+                lineOptions = new PolylineOptions();
+
+                // Fetching i-th route
+                List<HashMap<String, String>> path = result.get(i);
+
+                // Fetching all the points in i-th route
+                for (int j = 0; j < path.size(); j++) {
+                    HashMap<String, String> point = path.get(j);
+
+                    double lat = Double.parseDouble(point.get("lat"));
+                    double lng = Double.parseDouble(point.get("lng"));
+                    LatLng position = new LatLng(lat, lng);
+
+                    points.add(position);
+                }
+
+                // Adding all the points in the route to LineOptions
+                lineOptions.addAll(points);
+                lineOptions.width(14);
+                lineOptions.color(getResources().getColor(R.color.colorPrimaryDark));
+            }
+
+            // Drawing polyline in the Google Map for the i-th route
+           /* if (polylineMyRoute != null) {
+                polylineMyRoute.remove(); //removing the previous route and adding new route
+                polylineMyRoute = mMap.addPolyline(lineOptions);
+            } else {
+                polylineMyRoute = mMap.addPolyline(lineOptions);
+
+            }*/
+
+            // Drawing polyline in the Google Map for the i-th route
+            if (polylineOtherRoute != null) {
+                polylineOtherRoute.remove(); //removing the previous route and adding new route
+                polylineOtherRoute = mMap.addPolyline(lineOptions);
+            } else {
+                polylineOtherRoute = mMap.addPolyline(lineOptions);
+
+            }
+
         }
     }
 
@@ -1537,7 +1653,9 @@ public class MapActivity extends AppCompatActivity implements
                                                     jo.optString("opponent_profession"),
                                                     jo.optString("interested_in"),
                                                     jo.optString("moodid"),
-                                                    jo.optInt("isfriend")
+                                                    jo.optInt("isfriend"),
+                                                    jo.optString("sourcelatlong"),
+                                                    jo.optString("destlatlong")
                                             ));
                                         }
 
@@ -1647,7 +1765,9 @@ public class MapActivity extends AppCompatActivity implements
                                                     jo.optString("opponent_profession"),
                                                     jo.optString("interested_in"),
                                                     jo.optString("moodid"),
-                                                    jo.optInt("isfriend")
+                                                    jo.optInt("isfriend"),
+                                                    jo.optString("sourcelatlong"),
+                                                    jo.optString("destlatlong")
                                             ));
                                         }
 
@@ -1896,9 +2016,24 @@ public class MapActivity extends AppCompatActivity implements
 
 
             if (!getMoodDetailsFromID(userLists.get(position).getMoodid()).equalsIgnoreCase("")) {
-                Picasso.with(MapActivity.this).load(getMoodDetailsFromID(userLists.get(position).getMoodid()))
-                        .resize(40, 40)
-                        .into(iv_navigate);
+                if (userLists.get(position).getDestLatLng().length() > 0) {
+                    //user is driving
+                    System.out.println("user is travelling");
+                    Animation animation = new AlphaAnimation(1, 0);
+                    animation.setDuration(1000);
+                    animation.setInterpolator(new LinearInterpolator());
+                    animation.setRepeatCount(Animation.INFINITE);
+                    animation.setRepeatMode(Animation.REVERSE);
+                    iv_navigate.startAnimation(animation);
+                    Picasso.with(MapActivity.this).load(getMoodDetailsFromID(userLists.get(position).getMoodid()))
+                            .resize(40, 40)
+                            .into(iv_navigate);
+                } else {
+                    System.out.println("user is not travelling");
+                    Picasso.with(MapActivity.this).load(getMoodDetailsFromID(userLists.get(position).getMoodid()))
+                            .resize(40, 40)
+                            .into(iv_navigate);
+                }
             }
         }
 
@@ -1960,14 +2095,25 @@ public class MapActivity extends AppCompatActivity implements
             public void onClick(View v) {
                 //Navigate
                 dialog.dismiss();
-                System.out.println("GCL : " + GlobalVariable.currentLatitude);
+               /* System.out.println("GCL : " + GlobalVariable.currentLatitude);
                 String uri = "http://maps.google.com/maps?saddr=" + GlobalVariable.currentLatitude + ","
                         + GlobalVariable.currentLongitude + "&daddr=" + userLists.get(position).getLatitude() + "," +
-                        userLists.get(position).getLongitude();
+                        userLists.get(position).getLongitude();*/
                 /*Intent intent = new Intent(android.content.Intent.ACTION_VIEW,
                         Uri.parse(uri));
                 intent.setClassName("com.google.android.apps.maps","com.google.android.maps.MapsActivity");
                 context.startActivity(intent);*/
+
+                //if travelling
+                routeForMe = "other";
+                if (userLists.get(position).getDestLatLng().length() > 0) {
+                    drawRoute(userLists.get(position).getSourceLatLng().split("\\|")[0],
+                            userLists.get(position).getSourceLatLng().split("\\|")[1],
+                            userLists.get(position).getDestLatLng().split("\\|")[0],
+                            userLists.get(position).getDestLatLng().split("\\|")[1],
+                            polylineOtherRoute);
+                }
+
             }
         });
 
@@ -2228,7 +2374,7 @@ public class MapActivity extends AppCompatActivity implements
                                 item + "], position = [" + position + "]" + moodList.get(position).getMoodName());
                         view.setBackgroundColor(getResources().getColor(R.color.light_grey));
                         GlobalVariable.myMoodID = moodList.get(position).getId();
-                        setMyMood(moodList.get(position).getId());
+                        setMyMood(moodList.get(position).getId(), moodList.get(position).getMoodName());
                         dialog.dismiss();
                     }
                 })
@@ -2239,7 +2385,7 @@ public class MapActivity extends AppCompatActivity implements
         dialog.show();
     }
 
-    private void setMyMood(final String moodID) {
+    private void setMyMood(final String moodID, final String moodName) {
 
         if (CheckNetwork.isInternetAvailable(MapActivity.this)) {
 
@@ -2264,6 +2410,11 @@ public class MapActivity extends AppCompatActivity implements
                                     //Like Dislike
 
                                     dialog.dismiss();
+
+                                    //check whether selected long drive
+                                    if (moodName.equalsIgnoreCase("long drive")) {
+                                        showDestinationDialog();
+                                    }
 
                                 } catch (JSONException e) {
                                     e.printStackTrace();
@@ -2324,6 +2475,134 @@ public class MapActivity extends AppCompatActivity implements
         System.out.println("moodURL : " + moodURL);
         return moodURL;
     }
+
+    public void showDestinationDialog() {
+
+
+        AlertDialog.Builder builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder = new AlertDialog.Builder(MapActivity.this, android.R.style.Theme_Material_Dialog_Alert);
+        } else {
+            builder = new AlertDialog.Builder(MapActivity.this);
+        }
+        builder.setTitle("Set Destination")
+                .setMessage("Please set your destination point so that your friends know where are you travelling.")
+                .setPositiveButton("Set", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // continue with search
+                        Intent intent =
+                                null;
+                        try {
+
+                            GlobalVariable.isListIconClickedOnMap = true;//so that it does not get offline
+                            intent = new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_OVERLAY)
+                                    .build(MapActivity.this);
+                            startActivityForResult(intent, 1111);
+
+                        } catch (GooglePlayServicesRepairableException e) {
+                            e.printStackTrace();
+                        } catch (GooglePlayServicesNotAvailableException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                })
+                .setCancelable(false)
+                .show();
+
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 1111) {
+            if (resultCode == RESULT_OK) {
+                Place place = PlaceAutocomplete.getPlace(this, data);
+                Log.i(TAG, "Place: " + place.getName());
+                Log.i(TAG, "Place ltlng: " + place.getLatLng());
+                String value = place.getLatLng().toString();
+                System.out.println(value.substring(10, value.length() - 1));
+                String splittedValue = value.substring(10, value.length() - 1);
+                System.out.println(splittedValue.split(",")[0]);
+                sendDestinationPointToServer(splittedValue.split(",")[0], splittedValue.split(",")[1]);
+            } else if (resultCode == PlaceAutocomplete.RESULT_ERROR) {
+                Status status = PlaceAutocomplete.getStatus(this, data);
+                // TODO: Handle the error.
+                Log.i(TAG, status.getStatusMessage());
+
+            } else if (resultCode == RESULT_CANCELED) {
+                // The user canceled the operation.
+            }
+        }
+    }
+
+    private void sendDestinationPointToServer(final String lat, final String lng) {
+
+        if (CheckNetwork.isInternetAvailable(MapActivity.this)) {
+
+            final ProgressDialog dialog = new ProgressDialog(MapActivity.this);
+            dialog.setMessage("Sharing your destination...");
+            dialog.setCanceledOnTouchOutside(false);
+            dialog.setCancelable(false);
+            dialog.show();
+
+            RequestQueue queue = Volley.newRequestQueue(this);
+            StringRequest postRequest = new StringRequest(Request.Method.POST, Webservice.setDestination,
+                    new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+                            // response
+                            if (response != null) {
+                                System.out.println("set dest response : " + response.toString());
+                                JSONObject jsonObject = null;
+                                try {
+                                    jsonObject = new JSONObject(String.valueOf(response));
+
+                                    routeForMe = "me";
+                                    drawRoute(String.valueOf(GlobalVariable.currentLatitude),
+                                            String.valueOf(GlobalVariable.currentLongitude), lat, lng, polylineMyRoute);
+                                    dialog.dismiss();
+
+
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                    dialog.dismiss();
+                                }
+                            }
+
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            // error
+                            Log.d("Error.Response", error.toString());
+                        }
+                    }
+            ) {
+                @Override
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<String, String>();
+
+
+                    params.put("moodid", GlobalVariable.myMoodID);
+                    params.put("rowid", pref.getStringPreference(MapActivity.this, "user_id"));
+                    params.put("sourcelatlong", GlobalVariable.currentLatitude + "|" + GlobalVariable.currentLongitude);
+                    params.put("destlatlong", lat + "|" + lng);
+                    params.put("endtime", "01:00");
+
+                    System.out.println("set mood params : " + params);
+
+                    return params;
+                }
+            };
+            queue.add(postRequest);
+
+        } else {
+            showSnackbar("No internet connection!");
+        }
+
+    }
+
 
 }
 

@@ -24,7 +24,6 @@ public class Webservice {
     public static String rejectFriendReq = baseURL + "User/RejectFriendReq";
     public static String moodList = baseURL + "User/GetAllMoodList";
     public static String setMood = baseURL + "User/SetUserMood";
-
-
+    public static String setDestination = baseURL + "User/AddTravel";
 
 }

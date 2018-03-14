@@ -13,8 +13,9 @@ public class UserModel {
     String myProfession = "", opponentProfession = "", interestedIn = "";
     String moodid = "";
     int isFriend = 0;
+    String sourceLatLng = "", destLatLng = "";
 
-    public UserModel(String id, String latitude, String longitude, String name, String gender, String url, boolean isvisible, int isLiked, String fbID, String myProfession, String opponentProfession, String interestedIn, String moodid, int isFriend) {
+    public UserModel(String id, String latitude, String longitude, String name, String gender, String url, boolean isvisible, int isLiked, String fbID, String myProfession, String opponentProfession, String interestedIn, String moodid, int isFriend, String sourceLatLng, String destLatLng) {
         this.id = id;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -29,6 +30,8 @@ public class UserModel {
         this.interestedIn = interestedIn;
         this.moodid = moodid;
         this.isFriend = isFriend;
+        this.sourceLatLng = sourceLatLng;
+        this.destLatLng = destLatLng;
     }
 
     public String getId() {
@@ -141,5 +144,21 @@ public class UserModel {
 
     public void setIsFriend(int isFriend) {
         this.isFriend = isFriend;
+    }
+
+    public String getSourceLatLng() {
+        return sourceLatLng;
+    }
+
+    public void setSourceLatLng(String sourceLatLng) {
+        this.sourceLatLng = sourceLatLng;
+    }
+
+    public String getDestLatLng() {
+        return destLatLng;
+    }
+
+    public void setDestLatLng(String destLatLng) {
+        this.destLatLng = destLatLng;
     }
 }
