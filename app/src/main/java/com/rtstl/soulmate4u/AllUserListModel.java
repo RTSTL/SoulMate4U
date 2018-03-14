@@ -187,4 +187,6 @@ public class AllUserListModel {
     public void setIsFriend(int isFriend) {
         this.isFriend = isFriend;
     }
+
+
 }
