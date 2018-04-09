@@ -9,6 +9,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -37,6 +38,7 @@ public class OtpVerificationActivity extends AppCompatActivity {
     EditText et_phone;
     Context context;
     ProgressDialog dialog;
+    Preferences pref;
 
     private static OtpVerificationActivity inst;
 
@@ -61,6 +63,8 @@ public class OtpVerificationActivity extends AppCompatActivity {
         dialog.setCanceledOnTouchOutside(false);
         dialog.setMessage("Verifying please wait...");
 
+        pref = new Preferences(this);
+
         et_phone = (EditText) findViewById(R.id.et_phone);
 
         pinview = (PinView) findViewById(R.id.pinView);
@@ -73,10 +77,27 @@ public class OtpVerificationActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                //verifyPhoneNumber();
+                InputMethodManager inputManager = (InputMethodManager)
+                        getSystemService(Context.INPUT_METHOD_SERVICE);
 
-                startActivity(new Intent(OtpVerificationActivity.this, BasicInformationActivity.class));
-                finish();
+                inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),
+                        InputMethodManager.HIDE_NOT_ALWAYS);
+                verifyPhoneNumber();
+
+//                startActivity(new Intent(OtpVerificationActivity.this, BasicInformationActivity.class));
+//                finish();
+            }
+        });
+
+        findViewById(R.id.btn_resend).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                InputMethodManager inputManager = (InputMethodManager)
+                        getSystemService(Context.INPUT_METHOD_SERVICE);
+
+                inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),
+                        InputMethodManager.HIDE_NOT_ALWAYS);
+                verifyPhoneNumber();
             }
         });
 
@@ -91,7 +112,7 @@ public class OtpVerificationActivity extends AppCompatActivity {
             //success
             dialog.show();
             RequestQueue queue = Volley.newRequestQueue(this);
-            StringRequest postRequest = new StringRequest(Request.Method.POST, "",
+            StringRequest postRequest = new StringRequest(Request.Method.POST, Webservice.getOTP,
                     new Response.Listener<String>() {
                         @Override
                         public void onResponse(String response) {
@@ -103,7 +124,7 @@ public class OtpVerificationActivity extends AppCompatActivity {
                                 try {
                                     jsonObject = new JSONObject(String.valueOf(response));
 
-                                    dialog.dismiss();
+                                    //dialog.dismiss();
 
                                 } catch (JSONException e) {
                                     e.printStackTrace();
@@ -124,8 +145,8 @@ public class OtpVerificationActivity extends AppCompatActivity {
                 @Override
                 protected Map<String, String> getParams() {
                     Map<String, String> params = new HashMap<String, String>();
-                    params.put("user_id", "");
-                    params.put("mobile_no", et_phone.getText().toString());
+                    params.put("rowid", pref.getStringPreference(context, "user_id"));
+                    params.put("phone", et_phone.getText().toString());
 
                     System.out.println("params sending : " + params);
 
@@ -144,21 +165,29 @@ public class OtpVerificationActivity extends AppCompatActivity {
     }
 
     private void verifyOtpFromServer(final String otp) {
-        dialog.show();
+        //dialog.show();
         RequestQueue queue = Volley.newRequestQueue(this);
-        StringRequest postRequest = new StringRequest(Request.Method.POST, "",
+        StringRequest postRequest = new StringRequest(Request.Method.POST, Webservice.verifyOTP,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
                         // response
 
                         if (response != null) {
-                            System.out.println("otp response : " + response.toString());
+                            System.out.println("otp verify response : " + response.toString());
                             JSONObject jsonObject = null;
                             try {
                                 jsonObject = new JSONObject(String.valueOf(response));
+                                if (jsonObject.optInt("status") == 1) {
+                                    dialog.dismiss();
+                                    pref.storeBooleanPreference(context, "is_otp_verified", true);
+                                    startActivity(new Intent(OtpVerificationActivity.this,
+                                            BasicInformationActivity.class));
+                                    finish();
+                                } else {
+                                    showSnackbar("Something went wrong!");
+                                }
 
-                                dialog.dismiss();
 
                             } catch (JSONException e) {
                                 e.printStackTrace();
@@ -179,8 +208,8 @@ public class OtpVerificationActivity extends AppCompatActivity {
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<String, String>();
-                params.put("user_id", "");
-                params.put("mobile_no", et_phone.getText().toString());
+                params.put("rowid", pref.getStringPreference(context, "user_id"));
+                params.put("phone", et_phone.getText().toString());
                 params.put("otp", otp);
 
                 System.out.println("params sending : " + params);

@@ -10,5 +10,6 @@ public class GlobalVariable {
     public static boolean isListIconClickedOnMap = false;
     public static String currentOpponentChatID = "";
     public static String myMoodID = "";
+    public static String clickedFromOtherMarkerOrMyProfile = "";
 
 }

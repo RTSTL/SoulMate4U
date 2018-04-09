@@ -3,20 +3,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
-    <group android:checkableBehavior="single">
-
-        <item
-            android:id="@+id/nav_option"
-            android:icon="@drawable/ic_menu_slideshow"
-            android:title="Option" />
-        <item
-            android:id="@+id/nav_settings"
-            android:icon="@drawable/ic_menu_manage"
-            android:title="Settings" />
-    </group>
-
     <item android:title="">
         <menu>
+
+            <item
+                android:id="@+id/nav_edit_profile"
+                android:icon="@drawable/profile"
+                android:title="Edit Profile" />
+            <item
+                android:id="@+id/nav_settings"
+                android:icon="@drawable/ic_menu_manage"
+                android:title="Settings" />
+
+
             <item
                 android:id="@+id/nav_share"
                 android:icon="@drawable/ic_menu_share"

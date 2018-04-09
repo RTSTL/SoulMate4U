@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -66,16 +67,56 @@ public class FriendListAdapter extends RecyclerView.Adapter<FriendListAdapter.My
         holder.tv_name.setText(friendList.get(position).getName());
         holder.tv_profession.setText("Profession : " + friendList.get(position).getProfession());
 
+        System.out.println("mood id = " + friendList.get(position).getMoodID() +
+                " of " + friendList.get(position).getName() +
+                " -- mood URL : " + friendList.get(position).getMoodURL());
 
-        holder.tv_looking_for.setText("Looking for : " + friendList.get(position).getOppponentProfession());
+        if (friendList.get(position).getMoodURL().length() > 0)
+            Picasso.with(mContext).load(friendList.get(position).getMoodURL()).into(holder.iv_mood);
+
+        /*if (friendList.get(position).getDestLatLng().length() > 0) {
+            //User is travelling
+           *//* Animation animation = new AlphaAnimation(1, 0);
+            animation.setDuration(1000);
+            animation.setInterpolator(new LinearInterpolator());
+            animation.setRepeatCount(Animation.INFINITE);
+            animation.setRepeatMode(Animation.REVERSE);
+            holder.iv_mood.startAnimation(animation);*//*
+            Picasso.with(mContext).load(friendList.get(position).getMoodURL()).into(holder.iv_mood);
+        } else {
+            //user is not travelling
+            if (friendList.get(position).getMoodID() != 0) {
+                System.out.println("mood URL in else : " + friendList.get(position).getMoodURL());
+                Picasso.with(mContext).load(friendList.get(position).getMoodURL()).into(holder.iv_mood);
+            }
+        }*/
+
+        System.out.println("friendList.get(position).isVisible() : " + friendList.get(position).isVisible());
 
         if (friendListType == 2) {
             holder.btn_accpt.setVisibility(View.VISIBLE);
             holder.btn_reject.setVisibility(View.VISIBLE);
+            holder.iv_online.setVisibility(View.GONE);
+            holder.iv_mood.setVisibility(View.GONE);
         } else {
             holder.btn_accpt.setVisibility(View.GONE);
             holder.btn_reject.setVisibility(View.GONE);
+            holder.iv_online.setVisibility(View.VISIBLE);
+            holder.iv_mood.setVisibility(View.VISIBLE);
         }
+
+        if (friendList.get(position).isVisible()) {
+            System.out.println("online : " + friendList.get(position).isVisible());
+            holder.iv_online.setVisibility(View.VISIBLE);
+        } else {
+            System.out.println("offline : " + friendList.get(position).isVisible());
+            holder.iv_online.setVisibility(View.GONE);
+        }
+
+
+        holder.tv_looking_for.setText("Looking for : " + friendList.get(position).getOppponentProfession());
+
+
 
         holder.btn_accpt.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -185,6 +226,7 @@ public class FriendListAdapter extends RecyclerView.Adapter<FriendListAdapter.My
         private CircleImageView user_image;
         private TextView tv_name, tv_profession, tv_looking_for;
         private Button btn_accpt, btn_reject;
+        private ImageView iv_online, iv_mood;
 
         public MyViewHolder(View view) {
             super(view);
@@ -194,6 +236,8 @@ public class FriendListAdapter extends RecyclerView.Adapter<FriendListAdapter.My
             tv_looking_for = (TextView) view.findViewById(R.id.tv_looking_for);
             btn_reject = (Button) view.findViewById(R.id.btn_reject);
             btn_accpt = (Button) view.findViewById(R.id.btn_accpt);
+            iv_online = (ImageView) view.findViewById(R.id.iv_online);
+            iv_mood = (ImageView) view.findViewById(R.id.iv_mood);
 
         }
     }

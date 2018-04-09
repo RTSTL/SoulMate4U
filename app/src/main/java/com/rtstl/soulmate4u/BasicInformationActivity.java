@@ -2,6 +2,7 @@ package com.rtstl.soulmate4u;
 
 import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -9,6 +10,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -30,8 +32,10 @@ import com.firebase.client.Firebase;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -234,6 +238,8 @@ public class BasicInformationActivity extends AppCompatActivity {
 
                         pref.storeStringPreference(BasicInformationActivity.this,
                                 "registration_completed", "1");
+                        pref.storeBooleanPreference(BasicInformationActivity.this, "is_basic_profile_updated",
+                                true);
 
                         startActivity(new Intent(BasicInformationActivity.this,
                                 MapActivity.class));
@@ -376,10 +382,37 @@ public class BasicInformationActivity extends AppCompatActivity {
     }
 
     private void updateLabel() {
-        String myFormat = "dd-MM-yyyy"; //In which you need put here
+        String myFormat = "yyyy-MM-dd"; //In which you need put here
         SimpleDateFormat sdf = new SimpleDateFormat(myFormat, Locale.US);
+        InputMethodManager inputManager = (InputMethodManager)
+                getSystemService(Context.INPUT_METHOD_SERVICE);
 
+        inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),
+                InputMethodManager.HIDE_NOT_ALWAYS);
         tv_dob.setText(sdf.format(myCalendar.getTime()));
+
+        //check the age
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        Date c = Calendar.getInstance().getTime();
+        System.out.println("Current time => " + c);
+
+        String today = simpleDateFormat.format(c);
+
+        try {
+            Date date1 = simpleDateFormat.parse(today);
+            Date date2 = simpleDateFormat.parse(sdf.format(myCalendar.getTime()));
+
+            if (!printDifference(date2, date1)) {
+                showSnackbar("You must be 18 years old");
+                tv_dob.setText("");//clearing the field
+            }
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     private void showSnackbar(String text) {
@@ -392,5 +425,44 @@ public class BasicInformationActivity extends AppCompatActivity {
         TextView textView = (TextView) snackbarView.findViewById(com.androidadvance.topsnackbar.R.id.snackbar_text);
         textView.setTextColor(Color.WHITE);
         snackbar.show();
+    }
+
+    public boolean printDifference(Date startDate, Date endDate) {
+        //milliseconds
+        long different = endDate.getTime() - startDate.getTime();
+
+        System.out.println("startDate : " + startDate);
+        System.out.println("endDate : " + endDate);
+        System.out.println("different : " + different);
+
+        long secondsInMilli = 1000;
+        long minutesInMilli = secondsInMilli * 60;
+        long hoursInMilli = minutesInMilli * 60;
+        long daysInMilli = hoursInMilli * 24;
+
+        long elapsedDays = different / daysInMilli;
+        different = different % daysInMilli;
+
+        long elapsedHours = different / hoursInMilli;
+        different = different % hoursInMilli;
+
+        long elapsedMinutes = different / minutesInMilli;
+        different = different % minutesInMilli;
+
+        long elapsedSeconds = different / secondsInMilli;
+
+        long year = elapsedDays / 365;
+
+        System.out.printf(
+                "%d days, %d year, %d minutes, %d seconds%n",
+                elapsedDays, year, elapsedMinutes, elapsedSeconds);
+
+        if (year > 17) {
+            return true;
+        } else {
+            return false;
+        }
+
+
     }
 }

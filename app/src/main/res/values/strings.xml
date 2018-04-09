@@ -13,4 +13,12 @@
     <string name="google_plus_title">Google Plus</string>
     <string name="google_maps_title">Maps</string>
     <string name="google_messenger_title">Messenger</string>
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <string name="ad_unit_id">ca-app-pub-3940256099942544/2247696110</string>
+
+    <string name="ad_native_live_id"></string>
+    <string name="ad_video_live_id">ca-app-pub-2810327457287548/9491220443</string>
+    <string name="ad_fullscreen_live_id">ca-app-pub-2810327457287548/2127735744</string>
+    <string name="ad_banner_live_id">ca-app-pub-2810327457287548/8411023787</string>
+    <string name="ad_app_live_id">ca-app-pub-2810327457287548~1681963908</string>
 </resources>

@@ -33,6 +33,7 @@ import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -157,7 +158,7 @@ public class LoginActivity extends AppCompatActivity {
 
                 });
         Bundle permission_param = new Bundle();
-        permission_param.putString("fields", "id,name,email,picture.width(200).height(200),gender");
+        permission_param.putString("fields", "id,name,email,picture.width(650).height(650),gender");
         data_request.setParameters(permission_param);
         data_request.executeAsync();
 
@@ -181,21 +182,49 @@ public class LoginActivity extends AppCompatActivity {
                                 try {
                                     jsonObject = new JSONObject(String.valueOf(response));
                                     if (jsonObject.optInt("status") == 1) {
-                                        pref.storeStringPreference(context, "user_id",
-                                                jsonObject.optString("dbresponse"));
-                                        pref.storeStringPreference(context, "fb_id", fb_id);
-                                        pref.storeStringPreference(context, "fb_gender", fb_gender);
-                                        pref.storeStringPreference(context, "fb_name", fb_name);
-                                        pref.storeStringPreference(context, "fb_email", fb_email);
-                                        pref.storeStringPreference(context, "is_login",
-                                                "1");
-                                        pref.storeStringPreference(context, "fb_pic", fb_picUrl);
-                                        System.out.println("is_login in login : " +
-                                                (pref.getStringPreference(LoginActivity.this, "is_login")));
 
-                                        startActivity(new Intent(LoginActivity.this,
-                                                OtpVerificationActivity.class));
-                                        finish();
+                                        JSONArray list = jsonObject.optJSONArray("list");
+                                        for (int i = 0; i < list.length(); i++) {
+                                            JSONObject listObj = list.optJSONObject(i);
+
+                                            pref.storeStringPreference(context, "user_id",
+                                                    listObj.optString("rowid"));
+                                            pref.storeBooleanPreference(context, "is_otp_verified",
+                                                    listObj.optBoolean("isotpverified"));
+                                            pref.storeBooleanPreference(context, "is_basic_profile_updated",
+                                                    listObj.optBoolean("isbasicprofileupdated"));
+
+                                            pref.storeStringPreference(context, "fb_id", fb_id);
+                                            pref.storeStringPreference(context, "fb_gender", fb_gender);
+                                            pref.storeStringPreference(context, "fb_name", fb_name);
+                                            pref.storeStringPreference(context, "fb_email", fb_email);
+                                            pref.storeStringPreference(context, "is_login",
+                                                    "1");
+                                            pref.storeStringPreference(context, "fb_pic", fb_picUrl);
+                                            System.out.println("is_login in login : " +
+                                                    (pref.getStringPreference(LoginActivity.this, "is_login")));
+                                        }
+
+
+                                        if (pref.getBooleanPreference(context, "is_basic_profile_updated")) {
+                                            pref.storeStringPreference(context,
+                                                    "registration_completed", "1");
+                                            startActivity(new Intent(LoginActivity.this,
+                                                    MapActivity.class));
+                                            finish();
+                                        } else if (pref.getBooleanPreference(context, "is_otp_verified")) {
+                                            pref.storeStringPreference(context,
+                                                    "registration_completed", "0");
+                                            startActivity(new Intent(LoginActivity.this,
+                                                    BasicInformationActivity.class));
+                                            finish();
+                                        } else {
+                                            startActivity(new Intent(LoginActivity.this,
+                                                    OtpVerificationActivity.class));
+                                            finish();
+                                        }
+
+
                                     }
 
                                     dialog.dismiss();

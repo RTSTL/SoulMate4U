@@ -6,7 +6,8 @@ package com.rtstl.soulmate4u;
 
 public class Webservice {
 
-    public static String baseURL = "http://soulmate4uapi.bongstyle.co.in/";
+    public static String oldbaseURL = "http://soulmate4uapi.bongstyle.co.in/";
+    public static String baseURL = "http://223.31.109.234/Soulmate4uApi/";
     public static String addUser = baseURL + "User/Adduser";
     public static String updateUser = baseURL + "User/UpdateUser";
     public static String getUserByID = baseURL + "User/GetUserbyID";
@@ -25,5 +26,14 @@ public class Webservice {
     public static String moodList = baseURL + "User/GetAllMoodList";
     public static String setMood = baseURL + "User/SetUserMood";
     public static String setDestination = baseURL + "User/AddTravel";
-
+    public static String singleProfileDetail = baseURL + "User/GetUserProfileByID";
+    public static String uploadPicture = baseURL + "User/AddUserImages";
+    public static String deleteProfilePic = baseURL + "User/DeleteUserImage";
+    public static String getOTP = baseURL + "User/GetOTP";
+    public static String verifyOTP = baseURL + "User/VerifyOTP";
+    public static String getProfileDetails = baseURL + "User/GetUserProfile";
+    public static String addEditUserEducation = baseURL + "User/AddUserEducation";
+    public static String addEditUserCompany = baseURL + "User/AddUserCompany";
+    public static String getRelationshipList = baseURL + "User/GetMaritalList";
+    public static String submitProfileData = baseURL + "User/AddUserProfile";
 }

@@ -1,8 +1,6 @@
 package com.rtstl.soulmate4u;
 
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -64,28 +62,35 @@ public class NearbyAdapter extends RecyclerView.Adapter<NearbyAdapter.MyViewHold
             @Override
             public void onClick(View v) {
                 System.out.println("lat lng : " + GlobalVariable.currentLatitude);
-                String uri = "http://maps.google.com/maps?saddr=" + GlobalVariable.currentLatitude + ","
+                /*String uri = "http://maps.google.com/maps?saddr=" + GlobalVariable.currentLatitude + ","
                         + GlobalVariable.currentLongitude + "&daddr=" + nearbyList.get(position).getLatitude() + "," +
                         nearbyList.get(position).getLongitude();
                 Intent intent = new Intent(android.content.Intent.ACTION_VIEW,
                         Uri.parse(uri));
                 intent.setClassName("com.google.android.apps.maps", "com.google.android.maps.MapsActivity");
-                mContext.startActivity(intent);
+                mContext.startActivity(intent);*/
+
+
+                //Drawing route for NearBy
+                ((MapActivity) mContext).drawRouteForNearBy(String.valueOf(GlobalVariable.currentLatitude),
+                        String.valueOf(GlobalVariable.currentLongitude),
+                        String.valueOf(nearbyList.get(position).getLatitude()),
+                        String.valueOf(nearbyList.get(position).getLongitude()));
             }
         });
 
         LatLng ltln1 = new LatLng(Double.valueOf(GlobalVariable.currentLatitude), Double.valueOf(GlobalVariable.currentLongitude));
         LatLng ltln2 = new LatLng(Double.valueOf(nearbyList.get(position).getLatitude()),
                 Double.valueOf(nearbyList.get(position).getLongitude()));
-       int distanceFromMe = distanceBetween(ltln1, ltln2);
-       double distanceInKm = (distanceFromMe)/1000;
+        int distanceFromMe = distanceBetween(ltln1, ltln2);
+        double distanceInKm = (distanceFromMe) / 1000;
 
-       if(distanceFromMe > 1000){
-           holder.tv_distance.setText("" + distanceInKm+" km");
-       } else{
-           holder.tv_distance.setText("" + distanceFromMe+" m");
+        if (distanceFromMe > 1000) {
+            holder.tv_distance.setText("" + distanceInKm + " km");
+        } else {
+            holder.tv_distance.setText("" + distanceFromMe + " m");
 
-       }
+        }
 
 
     }
@@ -103,13 +108,13 @@ public class NearbyAdapter extends RecyclerView.Adapter<NearbyAdapter.MyViewHold
 
         public MyViewHolder(View view) {
             super(view);
-            iv_image = (CircleImageView) view.findViewById(R.id.nearby_image);
-            tv_name = (TextView) view.findViewById(R.id.tv_name);
-            tv_address = (TextView) view.findViewById(R.id.tv_address);
-            tv_distance = (TextView) view.findViewById(R.id.tv_distance);
-            tv_open = (TextView) view.findViewById(R.id.tv_open);
-            rl_wrapper = (RelativeLayout) view.findViewById(R.id.rl_wrapper);
-            rating_star = (SimpleRatingBar) view.findViewById(R.id.rating_star);
+            iv_image = view.findViewById(R.id.nearby_image);
+            tv_name = view.findViewById(R.id.tv_name);
+            tv_address = view.findViewById(R.id.tv_address);
+            tv_distance = view.findViewById(R.id.tv_distance);
+            tv_open = view.findViewById(R.id.tv_open);
+            rl_wrapper = view.findViewById(R.id.rl_wrapper);
+            rating_star = view.findViewById(R.id.rating_star);
         }
     }
 

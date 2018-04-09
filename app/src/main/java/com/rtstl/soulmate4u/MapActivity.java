@@ -63,6 +63,13 @@ import com.android.volley.toolbox.Volley;
 import com.androidadvance.topsnackbar.TSnackbar;
 import com.facebook.FacebookSdk;
 import com.facebook.login.LoginManager;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.reward.RewardItem;
+import com.google.android.gms.ads.reward.RewardedVideoAd;
+import com.google.android.gms.ads.reward.RewardedVideoAdListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -125,7 +132,8 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class MapActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        LocationListener, OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener {
+        LocationListener, OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener,
+        RewardedVideoAdListener {
 
     private GoogleMap mMap;
     GPSTracker gps;
@@ -150,6 +158,7 @@ public class MapActivity extends AppCompatActivity implements
     Marker myPositionMarker;
     MarkerOptions myPositionMarkerOptions;
     boolean isMyMarkerAdded = false;
+    boolean isMyIdFound = false;
     ArrayList<OpponentMarkerModel> opponentMarkerList = new ArrayList<>();
     MarkerOptions opponetMarkerOptions, restaurantMarkerOptions;
     ArrayList<Marker> restaurantMarkers = new ArrayList<>();
@@ -183,6 +192,13 @@ public class MapActivity extends AppCompatActivity implements
     StringRequest getUserStringRequest;
     Polyline polylineMyRoute, polylineOtherRoute;
     String routeForMe = "";
+    String otherRouteDrawnID = "";
+    private AdView mAdView;
+    private RewardedVideoAd rewardedVideoAd;
+    private int likeCount = 0;
+    private InterstitialAd mInterstitialAd;
+    private Polyline polylineNearByRoute;
+    DrawerLayout drawer;
 
     protected void createLocationRequest() {
         mLocationRequest = new LocationRequest();
@@ -194,7 +210,7 @@ public class MapActivity extends AppCompatActivity implements
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        //getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         if (!isGooglePlayServicesAvailable()) {
             finish();
@@ -207,17 +223,37 @@ public class MapActivity extends AppCompatActivity implements
                 .addOnConnectionFailedListener(this)
                 .build();
 
+        mGoogleApiClient.connect();
+        if (mGoogleApiClient.isConnected()) {
+            startLocationUpdates();
+        }
+
         gps = new GPSTracker(MapActivity.this);
         pref = new Preferences(MapActivity.this);
 
         setContentView(R.layout.activity_main_temp);
+
+        //Google AdMob
+        MobileAds.initialize(this, getString(R.string.ad_app_live_id));
+        mAdView = findViewById(R.id.adView);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        mAdView.loadAd(adRequest);
+
+        rewardedVideoAd = MobileAds.getRewardedVideoAdInstance(this);
+        rewardedVideoAd.setRewardedVideoAdListener(this);
+        loadRewardedVideoAd();
+
+        mInterstitialAd = new InterstitialAd(this);
+        mInterstitialAd.setAdUnitId(getString(R.string.ad_fullscreen_live_id));
+        mInterstitialAd.loadAd(new AdRequest.Builder().build());
+
 
         ////// drawer starts ///////
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        final DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
@@ -247,6 +283,20 @@ public class MapActivity extends AppCompatActivity implements
         tv_nav_email.setText(pref.getStringPreference(MapActivity.this, "fb_email"));
         Picasso.with(MapActivity.this).load(pref.getStringPreference(MapActivity.this, "fb_pic"))
                 .into(nav_profile_image);
+        //on clicking the profile image
+        nav_profile_image.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                GlobalVariable.isListIconClickedOnMap = true;//preventing from going offline
+                GlobalVariable.clickedFromOtherMarkerOrMyProfile = "me";
+                drawer.closeDrawer(GravityCompat.START);
+                Intent i = new Intent(MapActivity.this, ActivitySingleProfile.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("opponentID", pref.getStringPreference(MapActivity.this, "user_id"));
+                i.putExtras(bundle);
+                startActivity(i);
+            }
+        });
         ////// drawer ends ///////
 
         dialog = new ProgressDialog(MapActivity.this);
@@ -474,16 +524,7 @@ public class MapActivity extends AppCompatActivity implements
         findViewById(R.id.left_icon).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                iv_finder.setVisibility(View.VISIBLE);
-                rl_finder.setVisibility(View.GONE);
-                rl_finder.startAnimation(animShow);
-                restaurantList.clear();
-                rv_nearby.removeAllViews();
-                ll_rv_wrapper.setVisibility(View.GONE);
-                spinner.setSelectedIndex(0);
-                spn_distance.setSelectedIndex(0);
-                searchType = "restaurant||cafe";//default
-                searchDistance = "100";
+                closeNearByPanel();
             }
         });
 
@@ -522,7 +563,7 @@ public class MapActivity extends AppCompatActivity implements
             public void onClick(View v) {
                 //move to list activity
                 GlobalVariable.isListIconClickedOnMap = true;
-                Intent intent = new Intent(MapActivity.this, UserListActivity.class);
+                Intent intent = new Intent(MapActivity.this, AllUserListActivity.class);
                 startActivity(intent);
                 overridePendingTransition(0, 0);
             }
@@ -588,6 +629,11 @@ public class MapActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
 
+                if (mInterstitialAd.isLoaded()) {
+                    GlobalVariable.isListIconClickedOnMap = true;
+                    mInterstitialAd.show();
+                }
+
                 if (moodList.size() > 0) {
                     showBottomDialog(
                             Gravity.BOTTOM,
@@ -603,6 +649,19 @@ public class MapActivity extends AppCompatActivity implements
             }
         });
 
+    }
+
+    private void closeNearByPanel() {
+        iv_finder.setVisibility(View.VISIBLE);
+        rl_finder.setVisibility(View.GONE);
+        rl_finder.startAnimation(animShow);
+        restaurantList.clear();
+        rv_nearby.removeAllViews();
+        ll_rv_wrapper.setVisibility(View.GONE);
+        spinner.setSelectedIndex(0);
+        spn_distance.setSelectedIndex(0);
+        searchType = "restaurant||cafe";//default
+        searchDistance = "100";
     }
 
     private void getMoodList() {
@@ -716,7 +775,11 @@ public class MapActivity extends AppCompatActivity implements
                                                     listObj.optString("dob"),
                                                     "",
                                                     distanceFromMe,
-                                                    0
+                                                    0,
+                                                    listObj.optInt("moodid"),
+                                                    listObj.optString("moodurl"),
+                                                    listObj.optString("sourcelatlong"),
+                                                    listObj.optString("destlatlong")
 
                                             ));
                                         }
@@ -1133,11 +1196,12 @@ public class MapActivity extends AppCompatActivity implements
             LatLng oppnentLatLng = new LatLng(Double.valueOf(userLists.get(i).getLatitude()),
                     Double.valueOf(userLists.get(i).getLongitude()));
 
-            //System.out.println(" userLists.get(i).getUrl() : " +  userLists.get(i).getUrl());
-
-            if (userLists.get(i).getId().equalsIgnoreCase(pref.getStringPreference(MapActivity.this, "user_id"))) {
+            if (userLists.get(i).getId().equalsIgnoreCase(
+                    pref.getStringPreference(MapActivity.this, "user_id"))) {
+                isMyIdFound = true;
                 if (tempMarker != null) {
                     //tempMarker.remove();
+                    System.out.println("loop index : " + i);
                     tempMarker.setVisible(false);
                 }
 
@@ -1147,27 +1211,20 @@ public class MapActivity extends AppCompatActivity implements
                                 pref.getStringPreference(MapActivity.this, "fb_pic"), userLists.get(i).getGender())))
                         .title("Me");
 
-                //draw your own route
-                System.out.println("destination found : " + userLists.get(i).getDestLatLng());
-                System.out.println("source found : " + userLists.get(i).getSourceLatLng());
-//                System.out.println("userLists.get(i).getDestLatLng().split(\"|\")[0] : " + userLists.get(i).getDestLatLng().split("7")[0]);
-
                 if (userLists.get(i).getDestLatLng().length() > 0) {
                     //route found
-                    System.out.println("&& " + userLists.get(i).getSourceLatLng().split("\\|")[0] + " ++ " +
-                            userLists.get(i).getSourceLatLng().split("\\|")[1] + " ++ " +
-                            userLists.get(i).getDestLatLng().split("\\|")[0] + " ++ " +
-                            userLists.get(i).getDestLatLng().split("\\|")[1]);
-                    String sp = userLists.get(i).getSourceLatLng().toString();
-
-                    System.out.println("split print : " + sp.split("\\|")[0].toString());
-
                     routeForMe = "me";
                     drawRoute(userLists.get(i).getSourceLatLng().split("\\|")[0],
                             userLists.get(i).getSourceLatLng().split("\\|")[1],
                             userLists.get(i).getDestLatLng().split("\\|")[0],
                             userLists.get(i).getDestLatLng().split("\\|")[1],
                             polylineMyRoute);
+                } else {
+                    //remove the route
+                    if (polylineMyRoute != null) {
+                        //Not removing the polyline here, we removed it and re-adding it in the parser task
+                        polylineMyRoute.remove();
+                    }
                 }
 
 
@@ -1178,7 +1235,26 @@ public class MapActivity extends AppCompatActivity implements
                                 userLists.get(i).getUrl(), userLists.get(i).getGender())))
                         .title(userLists.get(i).getName());
 
-                System.out.println("mood is : " + userLists.get(i).getMoodid());
+                if (i == userLists.size() - 1) {
+                    //if this is the last and we dont find my user id then set temp marker position and make it visible
+                    if (isMyIdFound) {
+                        //my id  is found
+                        isMyIdFound = false; // made it false so that on next starting of the loop it will be false, as its last index
+                    } else {
+                        isMyIdFound = false;
+                        tempMarker.setVisible(true);
+                        tempMarker.setPosition(new LatLng(Double.valueOf(GlobalVariable.currentLatitude),
+                                Double.valueOf(GlobalVariable.currentLongitude)));
+                    }
+
+                }
+
+                //remove the route
+                if (polylineMyRoute != null) {
+                    //Not removing the polyline here, we removed it and re-adding it in the parser task
+                    // polylineMyRoute.remove();
+                }
+
             }
 
             if (opponentMarkerList.size() == 0) {
@@ -1253,10 +1329,50 @@ public class MapActivity extends AppCompatActivity implements
             }
             System.out.println("count : " + count);
             if (count == userLists.size()) {
+                if (opponentMarkerList.get(position).getUserID().equalsIgnoreCase
+                        (pref.getStringPreference(MapActivity.this, "user_id"))) {
+                    System.out.println("pppp");
+                    tempMarker.setVisible(true);
+                    tempMarker.setPosition(new LatLng(Double.valueOf(GlobalVariable.currentLatitude),
+                            Double.valueOf(GlobalVariable.currentLongitude)));
+                }
                 opponentMarkerList.get(position).getOpponentMarker().remove();
                 System.out.println("ML size : " + opponentMarkerList.size());
                 opponentMarkerList.remove(position);//new addition
                 count = 0;
+
+            }
+        }
+
+        checkOtherUserRouteDrawn();
+
+    }
+
+    private void checkOtherUserRouteDrawn() {
+
+        if (userLists.size() > 0) {
+            for (int i = 0; i < userLists.size(); i++) {
+                System.out.println("check for route : " + userLists.get(i).getId() + " == " + otherRouteDrawnID);
+                if (userLists.get(i).getId().equalsIgnoreCase(otherRouteDrawnID)) {
+                    if (userLists.get(i).getDestLatLng().length() > 0) {
+                        if (userLists.get(i).getIsFriend() > 0) {
+                            //store the user id
+                            System.out.println("route found");
+                            routeForMe = "other";
+                            drawRoute(userLists.get(i).getSourceLatLng().split("\\|")[0],
+                                    userLists.get(i).getSourceLatLng().split("\\|")[1],
+                                    userLists.get(i).getDestLatLng().split("\\|")[0],
+                                    userLists.get(i).getDestLatLng().split("\\|")[1],
+                                    polylineOtherRoute);
+                            break;
+                        }
+
+                    }
+                } else if (i == userLists.size() - 1) {
+                    if (polylineOtherRoute != null) {
+                        polylineOtherRoute.remove();
+                    }
+                }
             }
         }
 
@@ -1388,6 +1504,45 @@ public class MapActivity extends AppCompatActivity implements
         return data;
     }
 
+    @Override
+    public void onRewardedVideoAdLoaded() {
+        System.out.println("video loaded");
+    }
+
+    @Override
+    public void onRewardedVideoAdOpened() {
+        System.out.println("video opened");
+    }
+
+    @Override
+    public void onRewardedVideoStarted() {
+        System.out.println("video started");
+
+    }
+
+    @Override
+    public void onRewardedVideoAdClosed() {
+        System.out.println("video closed");
+
+    }
+
+    @Override
+    public void onRewarded(RewardItem rewardItem) {
+        System.out.println("video reward item");
+
+    }
+
+    @Override
+    public void onRewardedVideoAdLeftApplication() {
+        System.out.println("video left application");
+
+    }
+
+    @Override
+    public void onRewardedVideoAdFailedToLoad(int i) {
+        System.out.println("video failed");
+
+    }
 
     // Fetches data from url passed
     private class DownloadTask extends AsyncTask<String, Void, String> {
@@ -1451,14 +1606,14 @@ public class MapActivity extends AppCompatActivity implements
         @Override
         protected void onPostExecute(List<List<HashMap<String, String>>> result) {
             ArrayList<LatLng> points = null;
-            PolylineOptions lineOptions = null;
+            PolylineOptions lineOptions = new PolylineOptions();
             MarkerOptions markerOptions = new MarkerOptions();
 
 
             // Traversing through all the routes
             for (int i = 0; i < result.size(); i++) {
                 points = new ArrayList<LatLng>();
-                lineOptions = new PolylineOptions();
+                //lineOptions = new PolylineOptions();
 
                 // Fetching i-th route
                 List<HashMap<String, String>> path = result.get(i);
@@ -1475,9 +1630,11 @@ public class MapActivity extends AppCompatActivity implements
                 }
 
                 // Adding all the points in the route to LineOptions
-                lineOptions.addAll(points);
-                lineOptions.width(14);
-                lineOptions.color(getResources().getColor(R.color.colorAccent));
+                if (lineOptions != null) {
+                    lineOptions.addAll(points);
+                    lineOptions.width(14);
+                    lineOptions.color(getResources().getColor(R.color.colorAccent));
+                }
             }
 
             // Drawing polyline in the Google Map for the i-th route
@@ -1488,15 +1645,6 @@ public class MapActivity extends AppCompatActivity implements
                 polylineMyRoute = mMap.addPolyline(lineOptions);
 
             }
-
-          /*  // Drawing polyline in the Google Map for the i-th route
-            if (polylineOtherRoute != null) {
-                polylineOtherRoute.remove(); //removing the previous route and adding new route
-                polylineOtherRoute = mMap.addPolyline(lineOptions);
-            } else {
-                polylineOtherRoute = mMap.addPolyline(lineOptions);
-
-            }*/
 
         }
     }
@@ -1524,14 +1672,14 @@ public class MapActivity extends AppCompatActivity implements
         @Override
         protected void onPostExecute(List<List<HashMap<String, String>>> result) {
             ArrayList<LatLng> points = null;
-            PolylineOptions lineOptions = null;
+            PolylineOptions lineOptions = new PolylineOptions();
             MarkerOptions markerOptions = new MarkerOptions();
 
 
             // Traversing through all the routes
             for (int i = 0; i < result.size(); i++) {
                 points = new ArrayList<LatLng>();
-                lineOptions = new PolylineOptions();
+                //lineOptions = new PolylineOptions();
 
                 // Fetching i-th route
                 List<HashMap<String, String>> path = result.get(i);
@@ -1582,8 +1730,14 @@ public class MapActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
 
-        //isListIconClicked = false;
+        //setting the refresh time
+        System.out.println("refresh time : " + pref.getIntPreference(MapActivity.this,"refresh_time"));
+        if(pref.getIntPreference(MapActivity.this,"refresh_time") > 0){
+            delay = pref.getIntPreference(MapActivity.this,"refresh_time");
+        }
 
+        //isListIconClicked = false;
+        loadRewardedVideoAd();
 
         if (!GlobalVariable.isListIconClickedOnMap) {
             visibilityStatus = "0";
@@ -1603,7 +1757,7 @@ public class MapActivity extends AppCompatActivity implements
                 //do something
 
                 System.out.println("running handler");
-                if (mMap != null) {
+                if (mMap != null && mCurrentLocation != null) {
                     getOtherUsers();
                 }
 
@@ -1982,7 +2136,7 @@ public class MapActivity extends AppCompatActivity implements
         } else {
             gender = "F";
         }
-        tv_name_age.setText(userLists.get(position).getName() + ", XX, " + gender);
+        tv_name_age.setText(userLists.get(position).getName() + ", " + gender);
         tv_working.setText("Working as " + userLists.get(position).getMyProfession());
         tv_searching_for.setText("Searching for " + userLists.get(position).getOpponentProfession());
 
@@ -2041,6 +2195,17 @@ public class MapActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
 
+                //on clicking the image
+                //Create the bundle
+                dialog.dismiss();
+                GlobalVariable.isListIconClickedOnMap = true;//preventing from going offline
+                GlobalVariable.clickedFromOtherMarkerOrMyProfile = "other";
+                Intent i = new Intent(MapActivity.this, ActivitySingleProfile.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("opponentID", clickedMarkerID);
+                i.putExtras(bundle);
+                startActivity(i);
+
             }
         });
 
@@ -2095,23 +2260,24 @@ public class MapActivity extends AppCompatActivity implements
             public void onClick(View v) {
                 //Navigate
                 dialog.dismiss();
-               /* System.out.println("GCL : " + GlobalVariable.currentLatitude);
-                String uri = "http://maps.google.com/maps?saddr=" + GlobalVariable.currentLatitude + ","
-                        + GlobalVariable.currentLongitude + "&daddr=" + userLists.get(position).getLatitude() + "," +
-                        userLists.get(position).getLongitude();*/
-                /*Intent intent = new Intent(android.content.Intent.ACTION_VIEW,
-                        Uri.parse(uri));
-                intent.setClassName("com.google.android.apps.maps","com.google.android.maps.MapsActivity");
-                context.startActivity(intent);*/
-
                 //if travelling
                 routeForMe = "other";
-                if (userLists.get(position).getDestLatLng().length() > 0) {
-                    drawRoute(userLists.get(position).getSourceLatLng().split("\\|")[0],
-                            userLists.get(position).getSourceLatLng().split("\\|")[1],
-                            userLists.get(position).getDestLatLng().split("\\|")[0],
-                            userLists.get(position).getDestLatLng().split("\\|")[1],
-                            polylineOtherRoute);
+                if (userLists.size() > 0) {
+                    if (userLists.get(position).getDestLatLng().length() > 0) {
+                        if (userLists.get(position).getIsFriend() > 0) {
+                            //store the user id
+                            otherRouteDrawnID = userLists.get(position).getId();
+                            drawRoute(userLists.get(position).getSourceLatLng().split("\\|")[0],
+                                    userLists.get(position).getSourceLatLng().split("\\|")[1],
+                                    userLists.get(position).getDestLatLng().split("\\|")[0],
+                                    userLists.get(position).getDestLatLng().split("\\|")[1],
+                                    polylineOtherRoute);
+                        } else {
+                            Toast.makeText(MapActivity.this, "You need to be friend of " + userLists.get(position).getName(),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
                 }
 
             }
@@ -2158,8 +2324,22 @@ public class MapActivity extends AppCompatActivity implements
                                         iv_dislike.setImageDrawable(getResources().getDrawable(R.drawable.dislike_fill));
                                     }
 
-                                    userLists.get(position).setIsLiked(likeStatus); // set the user like status
+                                    System.out.println("userlist size before like icon fill : " + userLists.size());
+                                    if (userLists.size() > 0) {
+                                        userLists.get(position).setIsLiked(likeStatus); // set the user like status
+                                    }
                                     dialog.dismiss();
+
+
+                                    //checking for like count to show the video Ad
+                                    System.out.println("like count : " + likeCount);
+                                    if (likeCount % 4 == 0 && likeStatus == 1) {
+                                        showRewardedVideo();
+                                    }
+                                    if (likeStatus == 1) {
+                                        likeCount++;
+                                    }
+
 
                                 } catch (JSONException e) {
                                     e.printStackTrace();
@@ -2199,6 +2379,21 @@ public class MapActivity extends AppCompatActivity implements
         }
 
 
+    }
+
+    private void loadRewardedVideoAd() {
+
+        rewardedVideoAd.loadAd(getString(R.string.ad_video_live_id),
+                new AdRequest.Builder().build());
+
+    }
+
+    private void showRewardedVideo() {
+        if (rewardedVideoAd.isLoaded()) {
+            //Preventing user to go offline
+            GlobalVariable.isListIconClickedOnMap = true;
+            rewardedVideoAd.show();
+        }
     }
 
     @Override
@@ -2245,9 +2440,18 @@ public class MapActivity extends AppCompatActivity implements
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.nav_option) {
-            // Handle the camera action
+        if (id == R.id.nav_edit_profile) {
+            // Edit profile
+            GlobalVariable.isListIconClickedOnMap = true;
+            drawer.closeDrawer(GravityCompat.START);
+            Intent i = new Intent(MapActivity.this, ActivityEditProfile.class);
+            startActivity(i);
         } else if (id == R.id.nav_settings) {
+            //Stay online
+            GlobalVariable.isListIconClickedOnMap = true;
+            drawer.closeDrawer(GravityCompat.START);
+            Intent i = new Intent(MapActivity.this, ActivitySettings.class);
+            startActivity(i);
 
         } else if (id == R.id.nav_share) {
 
@@ -2603,6 +2807,113 @@ public class MapActivity extends AppCompatActivity implements
 
     }
 
+    public void drawRouteForNearBy(String lat1, String lng1, String lat2, String lng2) {
+
+        LatLng origin = new LatLng(Double.valueOf(lat1), Double.valueOf(lng1));
+        LatLng dest = new LatLng(Double.valueOf(lat2), Double.valueOf(lng2));
+
+        String url = getDirectionsUrl(origin, dest);
+        DownloadTaskForNearBy downloadTask = new DownloadTaskForNearBy();
+        downloadTask.execute(url);
+
+    }
+
+    public class DownloadTaskForNearBy extends AsyncTask<String, Void, String> {
+
+        // Downloading data in non-ui thread
+        @Override
+        protected String doInBackground(String... url) {
+
+            // For storing data from web service
+            String data = "";
+
+            try {
+                // Fetching the data from web service
+                data = downloadUrl(url[0]);
+            } catch (Exception e) {
+                Log.d("Background Task", e.toString());
+            }
+            return data;
+        }
+
+        // Executes in UI thread, after the execution of
+        // doInBackground()
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            ParserTaskForNearBy parserTask = new ParserTaskForNearBy();
+            // Invokes the thread for parsing the JSON data
+            parserTask.execute(result);
+        }
+    }
+
+    public class ParserTaskForNearBy extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
+
+        @Override
+        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
+
+            JSONObject jObject;
+            List<List<HashMap<String, String>>> routes = null;
+
+            try {
+                jObject = new JSONObject(jsonData[0]);
+                DirectionsJSONParser parser = new DirectionsJSONParser();
+
+                // Starts parsing data
+                routes = parser.parse(jObject);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return routes;
+        }
+
+        @Override
+        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
+            ArrayList<LatLng> points = null;
+            PolylineOptions lineOptions = new PolylineOptions();
+            MarkerOptions markerOptions = new MarkerOptions();
+
+
+            // Traversing through all the routes
+            for (int i = 0; i < result.size(); i++) {
+                points = new ArrayList<LatLng>();
+                //lineOptions = new PolylineOptions();
+
+                // Fetching i-th route
+                List<HashMap<String, String>> path = result.get(i);
+
+                // Fetching all the points in i-th route
+                for (int j = 0; j < path.size(); j++) {
+                    HashMap<String, String> point = path.get(j);
+
+                    double lat = Double.parseDouble(point.get("lat"));
+                    double lng = Double.parseDouble(point.get("lng"));
+                    LatLng position = new LatLng(lat, lng);
+
+                    points.add(position);
+                }
+
+                // Adding all the points in the route to LineOptions
+                if (lineOptions != null) {
+                    lineOptions.addAll(points);
+                    lineOptions.width(14);
+                    lineOptions.color(getResources().getColor(R.color.pink));
+                }
+            }
+
+            // Drawing polyline in the Google Map for the i-th route
+            if (polylineNearByRoute != null) {
+                polylineNearByRoute.remove(); //removing the previous route and adding new route
+                polylineNearByRoute = mMap.addPolyline(lineOptions);
+                closeNearByPanel();
+            } else {
+                polylineNearByRoute = mMap.addPolyline(lineOptions);
+                closeNearByPanel();
+            }
+
+        }
+    }
 
 }
 

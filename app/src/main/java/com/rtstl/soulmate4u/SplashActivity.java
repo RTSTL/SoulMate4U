@@ -23,7 +23,7 @@ public class SplashActivity extends AppCompatActivity {
             @Override
             public void run() {
 
-                if(pref.getStringPreference(SplashActivity.this,"is_login").equalsIgnoreCase("1")
+                /*if(pref.getStringPreference(SplashActivity.this,"is_login").equalsIgnoreCase("1")
                         && pref.getStringPreference(SplashActivity.this, "registration_completed")
                         .equalsIgnoreCase("1")){
                     Intent mainIntent = new Intent(SplashActivity.this, MapActivity.class);
@@ -38,6 +38,25 @@ public class SplashActivity extends AppCompatActivity {
                 } else{
                     Intent mainIntent = new Intent(SplashActivity.this, LoginActivity.class);
                     startActivity(mainIntent);
+                    finish();
+                }*/
+
+                if (pref.getBooleanPreference(SplashActivity.this, "is_basic_profile_updated")) {
+                    startActivity(new Intent(SplashActivity.this,
+                            MapActivity.class));
+                    finish();
+                } else if (pref.getBooleanPreference(SplashActivity.this, "is_otp_verified")) {
+                    startActivity(new Intent(SplashActivity.this,
+                            BasicInformationActivity.class));
+                    finish();
+                } else if (pref.getStringPreference(SplashActivity.this,"is_login").
+                        equalsIgnoreCase("1")){
+                    startActivity(new Intent(SplashActivity.this,
+                            OtpVerificationActivity.class));
+                    finish();
+                } else{
+                    startActivity(new Intent(SplashActivity.this,
+                            LoginActivity.class));
                     finish();
                 }
 

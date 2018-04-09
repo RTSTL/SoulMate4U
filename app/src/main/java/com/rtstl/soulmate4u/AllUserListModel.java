@@ -12,9 +12,10 @@ public class AllUserListModel {
     int likeStatus = 0;
     String profession = "", dob = "", lastActive = "";
     int distanceFromMe = 0;
-    int isFriend = 0;
+    int isFriend = 0, moodID = 0;
+    String moodURL = "", sourceLatLng = "", destLatLng = "";
 
-    public AllUserListModel(String id, String fbID, String name, String email, String picURL, String gender, String phone, String interestedIN, String oppponentProfession, String lastLat, String lastLong, boolean isOnline, boolean isVisible, int likeStatus, String profession, String dob, String lastActive, int distanceFromMe, int isFriend) {
+    public AllUserListModel(String id, String fbID, String name, String email, String picURL, String gender, String phone, String interestedIN, String oppponentProfession, String lastLat, String lastLong, boolean isOnline, boolean isVisible, int likeStatus, String profession, String dob, String lastActive, int distanceFromMe, int isFriend, int moodID, String moodURL, String sourceLatLng, String destLatLng) {
         this.id = id;
         this.fbID = fbID;
         this.name = name;
@@ -34,6 +35,10 @@ public class AllUserListModel {
         this.lastActive = lastActive;
         this.distanceFromMe = distanceFromMe;
         this.isFriend = isFriend;
+        this.moodID = moodID;
+        this.moodURL = moodURL;
+        this.sourceLatLng = sourceLatLng;
+        this.destLatLng = destLatLng;
     }
 
     public String getProfession() {
@@ -188,5 +193,35 @@ public class AllUserListModel {
         this.isFriend = isFriend;
     }
 
+    public int getMoodID() {
+        return moodID;
+    }
 
+    public void setMoodID(int moodID) {
+        this.moodID = moodID;
+    }
+
+    public String getMoodURL() {
+        return moodURL;
+    }
+
+    public void setMoodURL(String moodURL) {
+        this.moodURL = moodURL;
+    }
+
+    public String getSourceLatLng() {
+        return sourceLatLng;
+    }
+
+    public void setSourceLatLng(String sourceLatLng) {
+        this.sourceLatLng = sourceLatLng;
+    }
+
+    public String getDestLatLng() {
+        return destLatLng;
+    }
+
+    public void setDestLatLng(String destLatLng) {
+        this.destLatLng = destLatLng;
+    }
 }

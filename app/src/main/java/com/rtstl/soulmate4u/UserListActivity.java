@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -47,7 +46,6 @@ public class UserListActivity extends AppCompatActivity {
     ArrayList<AllUserListModel> tempOnlineSortList = new ArrayList<>();
     ArrayList<AllUserListModel> tempVisibleInvisibleSortList = new ArrayList<>();
     ArrayList<AllUserListModel> tempList = new ArrayList<>();
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -272,7 +270,11 @@ public class UserListActivity extends AppCompatActivity {
                                                     listObj.optString("dob"),
                                                     listObj.optString("lasttime"),
                                                     distanceFromMe,
-                                                    listObj.optInt("isfriend")
+                                                    listObj.optInt("isfriend"),
+                                                    listObj.optInt("moodid"),
+                                                    listObj.optString("moodurl"),
+                                                    listObj.optString("sourcelatlong"),
+                                                    listObj.optString("destlatlong")
 
                                             ));
                                         }
